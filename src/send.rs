@@ -23,6 +23,9 @@ fn find_port(addr: &str) -> io::Result<UdpSocket> {
 fn main() {
     let s = find_port("localhost").unwrap();
     s.connect("localhost:29001").unwrap();
-    let message = CString::new("ahoy ahoy!").unwrap();
-    s.send(&message.into_bytes()).unwrap();
+    for tick in 0u64.. {
+        let message = CString::new(tick.to_string()).unwrap();
+        let message = message.into_bytes();
+        s.send(&message).unwrap();
+    }
 }
