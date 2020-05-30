@@ -16,14 +16,6 @@ receive`. On the second say `cargo run --bin send`. Watch
 the interval between "processed" packets in the `receive`
 window: it should be quite large.
 
-# Issues
-
-* [ ] The receiver will not block when no packet is
-  currently available.
-
-* [ ] The receiver will block altogether until the first
-  message is received. This seems hard to fix.
-
 # License
 
 This work is made available under the "MIT License". Please

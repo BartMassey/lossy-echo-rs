@@ -1,6 +1,6 @@
 use std::ffi::CString;
 use std::net::UdpSocket;
-use std::sync::{Arc, RwLock};
+use std::sync::{Arc, Mutex, Condvar};
 use std::{thread, time};
 
 ///! Receive side of lossy echo demo. Together with the send
@@ -19,33 +19,64 @@ fn read(s: &UdpSocket) -> String {
     message.into_string().unwrap()
 }
 
-/// Start a reader that will update the "current" message as
-/// new messages are received. Returns a `RwLock` that can
+/// Structure for dispersing messages from receiving thread.
+struct Mailbox {
+    /// Optional mailbox contents.
+    contents: Mutex<Option<String>>,
+    /// Raise the flag to allow emptying the mailbox.
+    flag: Condvar,
+}
+
+impl Mailbox {
+    /// Make a new mailbox.
+    fn new() -> Self {
+        Mailbox {
+            contents: Mutex::new(None),
+            flag: Condvar::new(),
+        }
+    }
+
+    /// Put a message in the mailbox.
+    fn put(&self, message: String) {
+        let mut guard = self.contents.lock().unwrap();
+        *guard = Some(message);
+        self.flag.notify_one();
+    }
+
+    /// Get a message out of the mailbox.
+    fn get(&self) -> String {
+        loop {
+            let guard = self.contents.lock().unwrap();
+            let mut guard = self.flag.wait(guard).unwrap();
+            if let Some(message) = guard.take() {
+                return message;
+            }
+            // If there is a spurious wakeup, try again.
+        }
+    }
+}
+
+/// Start a receiver that will update the "current" message as
+/// new messages are received. Returns a `Mailbox` that can
 /// be used to retrieve the current message.
-///
-/// This function *will block* until the first message is
-/// received. (I don't see any way to write-lock the message
-/// lock until the child receives the first message.)
-fn start_reader() -> Arc<RwLock<String>> {
+fn start_receiver() -> Arc<Mailbox> {
     let s = UdpSocket::bind("localhost:29001").unwrap();
-    let initial = read(&s);
-    let message_lock = Arc::new(RwLock::new(initial));
-    let thread_message_lock = Arc::clone(&message_lock);
+    let mailbox = Arc::new(Mailbox::new());
+    let thread_mailbox = Arc::clone(&mailbox);
     let _ = thread::spawn(move || loop {
         let message = read(&s);
-        let mut w = thread_message_lock.write().unwrap();
-        *w = message;
+        thread_mailbox.put(message);
     });
-    message_lock
+    mailbox
 }
 
 /// Start the receive thread, then loop printing the current
 /// message every 100 ms.
 fn main() {
-    let message_lock = start_reader();
+    let mailbox = start_receiver();
     let sleep_time = time::Duration::from_millis(100);
     loop {
-        println!("{}", message_lock.read().unwrap());
+        println!("{}", mailbox.get());
         thread::sleep(sleep_time);
     }
 }
