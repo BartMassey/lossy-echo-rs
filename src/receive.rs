@@ -1,6 +1,6 @@
 use std::ffi::CString;
 use std::net::UdpSocket;
-use std::sync::{Arc, Mutex, Condvar};
+use std::sync::{Arc, Condvar, Mutex};
 use std::{thread, time};
 
 ///! Receive side of lossy echo demo. Together with the send
