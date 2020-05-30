@@ -1,0 +1,13 @@
+[package]
+name = "lossy-echo"
+version = "0.1.0"
+authors = ["Bart Massey <bart.massey@gmail.com>"]
+edition = "2018"
+
+[[bin]]
+name = "receive"
+path = "src/receive.rs"
+
+[[bin]]
+name = "send"
+path = "src/send.rs"
