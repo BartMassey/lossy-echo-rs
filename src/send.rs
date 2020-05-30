@@ -8,7 +8,7 @@ use std::net::UdpSocket;
 
 /// Get a UDP socket bound to the first available UDP port
 /// above 4095 as a sending address.
-/// 
+///
 /// This is seriously gross.  See
 /// [this issue](https://github.com/rust-lang-nursery/rust-cookbook/issues/500)
 /// for the status of something better as part of `std::net`.
@@ -19,7 +19,7 @@ fn find_port(addr: &str) -> io::Result<UdpSocket> {
             Err(e) => match e.kind() {
                 io::ErrorKind::AddrInUse => (),
                 _ => return Err(e),
-            }
+            },
         }
     }
     Err(io::Error::new(

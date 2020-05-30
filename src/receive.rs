@@ -31,12 +31,10 @@ fn start_reader() -> Arc<RwLock<String>> {
     let initial = read(&s);
     let message_lock = Arc::new(RwLock::new(initial));
     let thread_message_lock = Arc::clone(&message_lock);
-    let _ = thread::spawn(move || {
-        loop {
-            let message = read(&s);
-            let mut w = thread_message_lock.write().unwrap();
-            *w = message;
-        }
+    let _ = thread::spawn(move || loop {
+        let message = read(&s);
+        let mut w = thread_message_lock.write().unwrap();
+        *w = message;
     });
     message_lock
 }
